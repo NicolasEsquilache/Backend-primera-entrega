@@ -3,14 +3,11 @@ import fs from 'fs/promises';
 export class ProductManager {
     constructor() {
         this.productos = [];
-        this.nextId = 1;
         this.path = "src/products.json";
     }
 
     async addProduct(producto) {
-        //console.log("Producto en Manager: ",producto)
-
-        if (!producto.title || !producto.description || !producto.price || !producto.code || !producto.stock) {
+        if (!producto.title || !producto.description || !producto.category || !producto.price || !producto.code || !producto.stock) {
             console.error("Todos los campos son obligatorios.");
             return;
         }
@@ -20,8 +17,29 @@ export class ProductManager {
             return;
         }
 
-        producto.id = this.nextId++;
-        const { title, description, price, thumbnail,status, code, stock } = producto;
+
+        let existingProducts = [];
+        try {
+            const data = await fs.readFile(this.path, "utf-8");
+            if (data) {
+                existingProducts = JSON.parse(data);
+                if (!Array.isArray(existingProducts)) {
+                    throw new Error('El archivo no contiene un arreglo JSON válido.');
+                }
+            }
+        } catch (error) {
+            console.error("Error al leer el archivo:", error);
+            return;
+        }
+
+
+        if (existingProducts.length > 0) {
+            producto.id = Math.max(...existingProducts.map((p) => p.id)) + 1;
+        } else {
+            producto.id = 1;
+        }
+
+        const { title, description, price, thumbnails, category, status, code, stock } = producto;
 
         const nuevoProducto = {
             id: producto.id,
@@ -31,18 +49,22 @@ export class ProductManager {
             price,
             status: status || true,
             stock,
-            thumbnail
-            
-        }
-        this.productos.push(nuevoProducto);
+            category,
+            thumbnails: Array.isArray(thumbnails) ? thumbnails : [],
+        };
+
+
+        existingProducts.push(nuevoProducto);
+
 
         try {
-            await fs.writeFile(this.path, JSON.stringify(this.productos), "utf-8");
+            await fs.writeFile(this.path, JSON.stringify(existingProducts), "utf-8");
             return nuevoProducto;
         } catch (error) {
             console.error("Error al escribir en el archivo:", error);
         }
     }
+
 
     async getProducts() {
         try {
@@ -143,4 +165,3 @@ export class ProductManager {
 }
 
 
-    

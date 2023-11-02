@@ -1,7 +1,6 @@
 import express from 'express';
 import { cartsRouter } from './routes/carts.router.js';
 import { productsRouter } from './routes/products.router.js';
-import {ProductManager} from './Manager.js';
 
 
 
